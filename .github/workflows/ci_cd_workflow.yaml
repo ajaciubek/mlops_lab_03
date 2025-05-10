@@ -1,8 +1,7 @@
-# our CI/CD workflow .yaml file
-
 name: CI/CD workflow
 
-on: workflow_dispatch
+on:
+  workflow_dispatch:
     inputs:
       steps:
         description: 'Steps to be executed'
@@ -14,51 +13,48 @@ on: workflow_dispatch
           - all
 
 jobs:
-   integration:
-      if:  ${{ inputs.steps == 'integration' || inputs.steps == 'all' }}
-      name: checks_and_tests
-      runs-on: ubuntu-latest
-      steps:
-         - name: Checkout code repo
-           # this action clones current repository to the VM where our job is running
-           # https://github.com/actions/checkout
-           uses: actions/checkout@v4
-           
-         - name: Setup uv
-           run: curl -LsSf https://astral.sh/uv/install.sh | sh
-           
-         - name: Install dependencies
-           run: uv sync --group integration
-           
-         - name: Run ruff check
-           run: uv run ruff check
-           
-         - name: Run pip-audit
-           run: uv run pip-audit --vulnerability-service pypi
+  integration:
+    if: ${{ github.event.inputs.steps == 'integration' || github.event.inputs.steps == 'all' }}
+    name: checks_and_tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code repo
+        uses: actions/checkout@v4
 
-         - name: Run PyTest
-           run: uv run pytest tests
-   deployment:
-      if:  ${{ inputs.steps == 'all' }}
-      name: model_deployment
-      runs-on: ubuntu-latest
-      steps:
-         - name: Checkout code repo
-           # this action clones current repository to the VM where our job is running
-           # https://github.com/actions/checkout
-           uses: actions/checkout@v4
-           
-         - name: Setup uv
-           run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Setup uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
 
-         - name: Install dependencies
-           run: uv sync --group deployment
+      - name: Install dependencies
+        run: uv sync --group integration
 
-         - name: Download model
-           run: uv run python main.py --script download
-            
-         - name: Export model
-           run: uv run python main.py --script export
-        
-         - name: Build Docker image
-           run: docker build -t polish-sentiment-app-onnx:latest .
+      - name: Run ruff check
+        run: uv run ruff check
+
+      - name: Run pip-audit
+        run: uv run pip-audit --vulnerability-service pypi
+
+      - name: Run PyTest
+        run: uv run pytest tests
+
+  deployment:
+    if: ${{ github.event.inputs.steps == 'all' }}
+    name: model_deployment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code repo
+        uses: actions/checkout@v4
+
+      - name: Setup uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      - name: Install dependencies
+        run: uv sync --group deployment
+
+      - name: Download model
+        run: uv run python main.py --script download
+
+      - name: Export model
+        run: uv run python main.py --script export
+
+      - name: Build Docker image
+        run: docker build -t polish-sentiment-app-onnx:latest .
