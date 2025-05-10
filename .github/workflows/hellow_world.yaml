@@ -13,5 +13,5 @@ jobs:
     
     # definitions of all job steps
     steps:
-      name: Print Hello World # step name, displayed on UI
-      run: echo "Hello World!" # command to run
+      - name: Print Hello World
+        run: echo "Hello World from GitHub Actions!"
